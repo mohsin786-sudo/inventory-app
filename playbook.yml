@@ -1,0 +1,41 @@
+---
+# This is an Ansible Playbook.
+# It describes the desired state of your systems.
+
+- name: Configure Webservers
+  hosts: webservers        # This targets the 'webservers' group defined in inventory.ini
+  become: yes              # This allows Ansible to run tasks with elevated privileges (sudo)
+
+  tasks:
+    - name: Update apt cache (for Debian/Ubuntu based systems)
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags:
+        - setup
+
+    - name: Install Nginx web server
+      ansible.builtin.package:
+        name: nginx
+        state: present
+      tags:
+        - webserver
+
+    - name: Ensure Nginx service is running and enabled on boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
+      tags:
+        - webserver
+
+    - name: Create a simple Nginx index.html page
+      ansible.builtin.copy:
+        content: "<h1>Hello from {{ ansible_hostname }}! Infrastructure automated by Ansible!</h1>"
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      tags:
+        - webserver
+
